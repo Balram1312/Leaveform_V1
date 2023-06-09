@@ -6,7 +6,7 @@ import (
     "github.com/go-pg/pg/v9"
     "log"
     orm "github.com/go-pg/pg/v9/orm"
- 
+    "strconv"
 	"os"
 )
 
@@ -15,7 +15,7 @@ func EmployeeRouter(router *gin.Engine){
 
     router.GET("/employees", GetAllEmployees)
 	router.POST("/employee", CreateEmployee)
-    router.DELETE("/employee/:EmployeeId", DeleteEmployee)
+    router.DELETE("/employee/:employeeID", DeleteEmployee)
 
 }
 
@@ -56,11 +56,12 @@ func InitiateDB(db *pg.DB) {
 	dbConnect = db
 }
 
+
+
 func CreateEmployee(c *gin.Context) {
     var employee models.Employee
 	c.BindJSON(&employee)
-    id := employee.ID
-
+    //ID := employee.ID
     name := employee.Name      
     leavetype := employee.Leavetype
     fromdate := employee.Fromdate
@@ -70,7 +71,7 @@ func CreateEmployee(c *gin.Context) {
     reporter :=  employee.Reporter  
 
 	insertError := dbConnect.Insert(&models.Employee{
-        ID:  id,
+       
         Name: name,     
         Leavetype: leavetype, 
         Fromdate: fromdate,
@@ -94,7 +95,6 @@ func CreateEmployee(c *gin.Context) {
 	})
 	return
 }
-
 
 
 func GetAllEmployees(c *gin.Context) {
@@ -121,12 +121,22 @@ func GetAllEmployees(c *gin.Context) {
 
 
 func DeleteEmployee(c *gin.Context) {
-	EmployeeId := c.Param("EmployeeId")
-	todo := &models.Employee{ID: EmployeeId}
-
-	err := dbConnect.Delete(todo)
+	employeeID := c.Param("employeeID")
+	employeeIDInt, err := strconv.Atoi(employeeID)
 	if err != nil {
-		log.Printf("Error while deleting a single todo, Reason: %v\n", err)
+		log.Printf("Invalid employee ID: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  http.StatusBadRequest,
+			"message": "Invalid employee ID",
+		})
+		return
+	}
+
+	employee := &models.Employee{ID: employeeIDInt}
+
+	err = dbConnect.Delete(employee)
+	if err != nil {
+		log.Printf("Error while deleting an employee, Reason: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  http.StatusInternalServerError,
 			"message": "Something went wrong",
@@ -138,5 +148,4 @@ func DeleteEmployee(c *gin.Context) {
 		"status":  http.StatusOK,
 		"message": "Employee deleted successfully",
 	})
-	return
 }

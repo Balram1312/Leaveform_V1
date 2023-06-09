@@ -2,7 +2,7 @@ package models
 
 
 type Employee struct {        
-    ID          string    `json:"id"`
+    ID          int         `json:"id" pg:",pk"`
     Name        string      `json:"name"`
     Leavetype   string      `json:"leavetype"`
     Fromdate    string      `json:"fromdate"`
